@@ -1,0 +1,13 @@
+{
+  "name": "pickleball-match-charter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chart pickleball matches from video: keep the score, tag errors and 3rd shots, see the stats.",
+  "scripts": {
+    "start": "npx --yes serve .",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

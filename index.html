@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pickleball Match Charter</title>
+<meta name="description" content="Chart pickleball matches from video: keep the score, tag errors and 3rd shots, and see the stats.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="1.4"/><circle cx="14" cy="7.5" r="1.4"/><circle cx="16" cy="13" r="1.4"/><circle cx="10" cy="15" r="1.4"/><circle cx="12" cy="11" r="1.1"/></svg>
+      <span>Match Charter</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" id="tab-chart" data-view="chart" aria-selected="true">Chart</button>
+      <button class="tab" role="tab" id="tab-stats" data-view="stats" aria-selected="false">Stats</button>
+      <button class="tab" role="tab" id="tab-setup" data-view="setup" aria-selected="false">Match</button>
+    </nav>
+    <div class="match-meta">
+      <span id="matchTitle" class="match-title"></span>
+      <span id="saveState" class="save-state"></span>
+    </div>
+  </header>
+
+  <div id="sampleBanner" class="banner" hidden>
+    <span>You’re looking at a <strong>generated sample match</strong> (example data, no video).</span>
+    <button class="btn btn-primary" id="bannerNew" type="button">Start your own match</button>
+  </div>
+
+  <main>
+    <!-- CHART -->
+    <section id="view-chart" class="view" role="tabpanel" aria-labelledby="tab-chart">
+      <div class="chart-grid">
+        <div class="area-stage">
+          <div class="stage" id="stage">
+            <div id="videoHost" class="video-host"></div>
+            <div id="board" class="board"></div>
+            <div id="scorebug" class="scorebug" aria-live="off"></div>
+            <div id="callout" class="callout" hidden></div>
+          </div>
+
+          <div class="source-bar" id="sourceBar">
+            <label class="btn" for="fileInput">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h11v12H4zM15 10l5-3v10l-5-3"/></svg>
+              Open video file
+            </label>
+            <input type="file" id="fileInput" accept="video/*" class="visually-hidden">
+            <form id="ytForm" class="yt-form">
+              <input id="ytInput" type="text" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link">
+              <button class="btn" type="submit">Load</button>
+            </form>
+            <button class="btn btn-quiet" id="noVideoBtn" type="button">Courtside (no video)</button>
+          </div>
+          <p id="sourceStatus" class="source-status" role="status"></p>
+
+          <div class="transport" id="transport">
+            <button class="btn btn-icon" data-seek="-5" type="button" title="Back 5 s (←)" aria-label="Back 5 seconds">−5</button>
+            <button class="btn btn-icon" id="playBtn" type="button" title="Play / pause (Space)" aria-label="Play or pause">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" d="M8 5l11 7-11 7z"/></svg>
+            </button>
+            <button class="btn btn-icon" data-seek="5" type="button" title="Forward 5 s (→)" aria-label="Forward 5 seconds">+5</button>
+            <select id="rateSel" aria-label="Playback speed">
+              <option value="0.5">0.5×</option>
+              <option value="0.75">0.75×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+            <span id="timeLabel" class="timecode">--:--</span>
+            <span class="spacer"></span>
+            <button class="btn" id="markBtn" type="button" title="Mark the serve so the rally can be replayed from its start">
+              Mark serve <kbd>S</kbd>
+            </button>
+            <label class="toggle">
+              <input type="checkbox" id="overlayToggle" checked>
+              <span>Score overlay</span>
+            </label>
+          </div>
+        </div>
+
+        <aside class="area-desk desk" aria-label="Scoring">
+          <div class="call-card" id="callCard"></div>
+          <div class="log-actions" id="logActions">
+            <div class="win-buttons">
+              <button class="win-btn team-a" id="winA" type="button"><span class="win-name"></span><span class="win-sub">won the rally <kbd>1</kbd></span></button>
+              <button class="win-btn team-b" id="winB" type="button"><span class="win-name"></span><span class="win-sub">won the rally <kbd>2</kbd></span></button>
+            </div>
+            <div class="quick-row">
+              <button class="btn" id="faultBtn" type="button">Serve fault <kbd>F</kbd></button>
+              <button class="btn" id="returnErrBtn" type="button">Return error <kbd>R</kbd></button>
+              <button class="btn btn-quiet" id="undoBtn" type="button">Undo <kbd>U</kbd></button>
+            </div>
+          </div>
+          <div class="details" id="details"></div>
+        </aside>
+
+        <div class="area-log">
+          <div class="section-head">
+            <h2>Rallies</h2>
+            <span id="logCount" class="muted"></span>
+          </div>
+          <div class="log-wrap">
+            <table class="log" id="logTable">
+              <thead><tr><th>#</th><th>Time</th><th>Score</th><th>Server</th><th>Won</th><th>Tags</th><th><span class="visually-hidden">Play</span></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="kbd-help">Keys: <kbd>1</kbd>/<kbd>2</kbd> rally won · <kbd>F</kbd> serve fault · <kbd>R</kbd> return error · <kbd>U</kbd> undo · <kbd>S</kbd> mark serve · <kbd>Space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> 5 s (<kbd>Shift</kbd> 1 s) · <kbd>[</kbd><kbd>]</kbd> previous/next rally · <kbd>Esc</kbd> leave a text box</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section id="view-stats" class="view" role="tabpanel" aria-labelledby="tab-stats" hidden>
+      <div id="statsRoot" class="stats"></div>
+    </section>
+
+    <!-- MATCH SETUP -->
+    <section id="view-setup" class="view" role="tabpanel" aria-labelledby="tab-setup" hidden>
+      <div id="setupRoot" class="setup"></div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast" role="status" hidden></div>
+<div id="tip" class="tip" hidden></div>
+
+<script src="js/engine.js"></script>
+<script src="js/config.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/sample.js"></script>
+<script src="js/video.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
