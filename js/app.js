@@ -7,6 +7,8 @@
   'use strict';
 
   const { engine, stats, config, video, sample } = window.PBA;
+  // Set by hosts that block YouTube embeds and file downloads (e.g. a sandboxed preview).
+  const LIMITED = window.PBA_LIMITED === true;
 
   // ---------------------------------------------------------------- helpers
   const $ = (s, el) => (el || document).querySelector(s);
@@ -370,7 +372,9 @@
     const rep = app.rep;
     const st = rep.current;
     const note = !m.rallies.length && (!m.video || m.video.source === 'none')
-      ? 'Open a match video or paste a YouTube link below. With no video, tap who won each rally as you watch from the court.'
+      ? (LIMITED
+        ? 'Open a match video file below. With no video, tap who won each rally as you watch from the court.'
+        : 'Open a match video or paste a YouTube link below. With no video, tap who won each rally as you watch from the court.')
       : '';
     const serverLine = rep.matchOver
       ? `${esc(teamName(rep.matchWinner))} won the match`
@@ -955,12 +959,13 @@
       <div class="panel">
         <h2>Export</h2>
         <div class="row-actions">
-          <button class="btn" type="button" id="exportJson">Download JSON</button>
-          <button class="btn" type="button" id="exportCsv">Download CSV</button>
-          <button class="btn" type="button" id="copyCsv">Copy CSV</button>
+          ${LIMITED ? '' : `<button class="btn" type="button" id="exportJson">Download JSON</button>
+          <button class="btn" type="button" id="exportCsv">Download CSV</button>`}
+          <button class="btn" type="button" data-copy="json">Copy JSON</button>
+          <button class="btn" type="button" data-copy="csv">Copy CSV</button>
         </div>
-        <p class="hint">JSON keeps everything and can be imported again. CSV has one row per rally for Excel or Google Sheets. If a download doesn’t start, use Copy CSV.</p>
-        ${app.copyText != null ? `<textarea id="copyFallback" rows="6" readonly aria-label="CSV to copy">${esc(app.copyText)}</textarea><p class="hint">Copying was blocked here. Select the text above and copy it.</p>` : ''}
+        <p class="hint">JSON keeps everything and can be imported again. CSV has one row per rally for Excel or Google Sheets.${LIMITED ? ' Downloads are blocked on this page, so copy the text and paste it into a file or spreadsheet.' : ' If a download doesn’t start, use Copy.'}</p>
+        ${app.copyText != null ? `<textarea id="copyFallback" rows="6" readonly aria-label="Text to copy">${esc(app.copyText)}</textarea><p class="hint">Copying was blocked here. Select the text above and copy it.</p>` : ''}
       </div>
       </div>`;
   }
@@ -1053,7 +1058,9 @@
 
   function restoreVideo() {
     const v = M().video || {};
-    if (v.source === 'youtube' && v.youtubeId) {
+    if (v.source === 'youtube' && v.youtubeId && LIMITED) {
+      status('This match uses a YouTube video, which can’t play on this page. Open it in the GitHub Pages version.');
+    } else if (v.source === 'youtube' && v.youtubeId) {
       $('#ytInput').value = 'https://youtu.be/' + v.youtubeId;
       useYouTube(v.youtubeId, true);
     } else if (v.source === 'file' && v.fileName) {
@@ -1167,11 +1174,16 @@
       if (b.dataset.delmatchYes) { deleteMatch(b.dataset.delmatchYes); return; }
       if (b.id === 'exportJson') { download(fileSlug(m) + '.json', JSON.stringify(m, null, 2), 'application/json'); toast('JSON download started'); return; }
       if (b.id === 'exportCsv') { download(fileSlug(m) + '.csv', toCSV(m), 'text/csv'); toast('CSV download started'); return; }
-      if (b.id === 'copyCsv') {
-        const text = toCSV(m);
+      if (b.dataset.copy) {
+        const isCsv = b.dataset.copy === 'csv';
+        const text = isCsv ? toCSV(m) : JSON.stringify(m, null, 2);
         const fallback = () => { app.copyText = text; renderSetup(); const ta = $('#copyFallback'); if (ta) { ta.focus(); ta.select(); } };
         try {
-          navigator.clipboard.writeText(text).then(() => { app.copyText = null; toast('CSV copied — paste it into a spreadsheet'); renderSetup(); }, fallback);
+          navigator.clipboard.writeText(text).then(() => {
+            app.copyText = null;
+            toast(isCsv ? 'CSV copied. Paste it into a spreadsheet.' : 'JSON copied. Paste it into a .json file to import later.');
+            renderSetup();
+          }, fallback);
         } catch (err) { fallback(); }
       }
     });
@@ -1349,6 +1361,7 @@
     if (['chart', 'stats', 'setup'].includes(hash)) app.view = hash;
     const m = M();
     app.selected = m.rallies.length ? m.rallies.length - 1 : null;
+    if (LIMITED) $('#ytForm').hidden = true;
     bind();
     app.rep = engine.replay(m);
     render();
