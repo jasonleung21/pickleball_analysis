@@ -87,7 +87,7 @@ unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_OAUTH_TOKEN
 export WECHAT_ACP_TELEMETRY=0
 export ENABLE_CLAUDEAI_MCP_SERVERS=1
 cd "$BOT_DIR"
-exec npx -y wechat-acp@0.10.0 --agent claude --cwd "$BOT_DIR" --inbox-dir "$BOT_DIR/inbox" --hide-thoughts "\$@"
+exec npx -y wechat-acp@0.10.0 --agent claude --cwd "$BOT_DIR" --inbox-dir "$BOT_DIR/inbox" --hide-thoughts --idle-timeout 120 "\$@"
 EOF
 chmod +x "$BOT_DIR/start.sh"
 

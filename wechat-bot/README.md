@@ -7,7 +7,25 @@
 
 ---
 
-## 🔄 更新後要做（你而家喺呢度）
+## 🆕 最新：開機自動行（你而家喺呢度）
+測試全部通過。最後一個修正：bot 閒置 2 個鐘就開新對話，「今日日期」唔會停留喺舊日子，「聽日」「下星期三」唔會計錯。
+
+- [ ] **1.** 喺行緊 bot 嘅 Terminal 撳 Ctrl+C 停咗佢。
+- [ ] **2.** 拎新版：
+```bash
+cd ~/pickleball-bot && git pull
+cd wechat-bot && bash setup.sh
+```
+- [ ] **3.** 開機自動行：
+```bash
+launchctl load ~/Library/LaunchAgents/com.jason.wechat-acp.plist
+```
+- [ ] **4.** 喺微信問 bot「今個星期有咩行程？」，有回覆就代表背景運行成功。之後個 Terminal 可以閂。
+- [ ] **5.** 系統設定 → 電池（或能源）→ 插電時開「防止自動睡眠」。
+
+---
+
+## 🔄 上一輪更新（已完成）
 第一次測試發現三個問題，新版 `setup.sh` 已經修正：
 - 你部 Mac 設咗 `ANTHROPIC_API_KEY`，令 claude.ai connector（Google Calendar）被停用 → 新增 `start.sh`，淨係喺 bot 度拎走個 key，Soul 唔受影響。
 - folder 未被信任，准用日曆嘅規則被略過 → 下面第 2 步。
