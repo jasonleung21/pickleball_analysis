@@ -41,8 +41,12 @@
 - **交通時間**：先用場地 → 分鐘嘅對照表（放 Vault 或 config），唔使一開始就接 Google Maps API。
 - 去重：同一個活動可能同時喺 CourtReserve feed 同 `Pickleball` 日曆出現（同日、時間相近、場地相似 → 當同一個）。
 
+## 已決定：WhatsApp 入口
+- WhatsApp（群組同私聊）一律複製或截圖貼俾 WeixinClawBot。所有行程用同一個入口、同一套規則。
+- 唔做 iPhone 捷徑 → Discord；唔用非官方工具自動讀 WhatsApp（違反條款，有封號風險）。
+- 所以 Soul **唔使**識寫日曆，只需要讀日曆同提醒。
+
 ## 未決
-- **WhatsApp 入口**：最簡單係將 WhatsApp 訊息複製或截圖貼俾 WeixinClawBot（一個入口）；或者做 iPhone 捷徑 → Discord `#行程-inbox`。問 Jason 揀邊個。
 - 確認 Jason 有冇做咗：`launchctl load` WeChat bot、Mac「插電時防止自動睡眠」。
 
 ## 完成後
