@@ -21,7 +21,7 @@ cat > "$BOT_DIR/CLAUDE.md" <<'EOF'
 - 有人要求你做行程以外嘅嘢 → 禮貌拒絕。
 
 # 處理流程
-1. 時區係 Asia/Hong_Kong。今日日期以系統提供嘅日期為準，將「下星期三」「聽日」等轉成實際日期。
+1. Jason 住多倫多，時區預設 America/Toronto（create_event 一定要填 timeZone）。訊息明確講香港地方先用 Asia/Hong_Kong。今日日期以系統提供嘅日期為準，將「下星期三」「聽日」等轉成實際日期。
 2. 抽出：日期、開始時間、結束時間、場地（盡量完整地址）、類型（波聚／教練堂／場地預約）、搞手或聯絡人、費用、人數。
 3. 用 list_calendars 搵名叫「Pickleball」嘅日曆，寫入嗰度；搵唔到就寫 primary，並提醒 Jason 開「Pickleball」日曆。
 4. 寫入前用 list_events 睇同日有冇：
@@ -42,9 +42,9 @@ cat > "$BOT_DIR/CLAUDE.md" <<'EOF'
 8. Jason 問「聽日／今個星期有咩」→ 用 list_events 列出。
 
 # 回覆格式
-✅ 已加入：11/5（三）19:30–21:30
-📍 歌和老街室內場
-🏓 波聚｜搞手 Alan｜$80
+✅ 已加入：11/8（日）18:00–20:00
+📍 Picktopia Richmond Hill
+🏓 波聚｜聯絡人 Wendy｜$20
 （有問題先加 ⚠️ 撞期／缺資料嘅提示）
 EOF
 
@@ -66,7 +66,6 @@ cat > "$BOT_DIR/.claude/settings.json" <<'EOF'
       "Bash",
       "Write",
       "Edit",
-      "MultiEdit",
       "NotebookEdit",
       "WebFetch",
       "WebSearch",
@@ -79,7 +78,20 @@ cat > "$BOT_DIR/.claude/settings.json" <<'EOF'
 }
 EOF
 
-# ---------- 3. 開機自動行（launchd）----------
+# ---------- 3. 啟動 script ----------
+# 拎走 API key：設咗 ANTHROPIC_API_KEY 等 auth 嘅話，Claude Code 會停用 claude.ai connector（包括 Google Calendar）。
+# 只影響呢個 bot，Soul 等其他程式照用原本嘅設定。
+cat > "$BOT_DIR/start.sh" <<EOF
+#!/bin/zsh
+unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN CLAUDE_CODE_OAUTH_TOKEN
+export WECHAT_ACP_TELEMETRY=0
+export ENABLE_CLAUDEAI_MCP_SERVERS=1
+cd "$BOT_DIR"
+exec npx -y wechat-acp@0.10.0 --agent claude --cwd "$BOT_DIR" --inbox-dir "$BOT_DIR/inbox" --hide-thoughts "\$@"
+EOF
+chmod +x "$BOT_DIR/start.sh"
+
+# ---------- 4. 開機自動行（launchd）----------
 cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -90,13 +102,8 @@ cat > "$PLIST" <<EOF
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>cd $BOT_DIR &amp;&amp; exec npx -y wechat-acp@0.10.0 --agent claude --cwd $BOT_DIR --inbox-dir $BOT_DIR/inbox --hide-thoughts</string>
+    <string>$BOT_DIR/start.sh</string>
   </array>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>WECHAT_ACP_TELEMETRY</key><string>0</string>
-    <key>ENABLE_CLAUDEAI_MCP_SERVERS</key><string>1</string>
-  </dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>StandardOutPath</key><string>$HOME/Library/Logs/wechat-acp.log</string>
@@ -106,4 +113,4 @@ cat > "$PLIST" <<EOF
 EOF
 
 echo "✅ 設定檔已建立：$BOT_DIR"
-echo "下一步：跟 README 第 3 步，檢查 Google Calendar connector 係咪載入咗。"
+echo "下一步：跟 README 第 3 步（信任 folder + 檢查日曆）。"
